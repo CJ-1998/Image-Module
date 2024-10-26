@@ -69,7 +69,7 @@ public class ConvertService {
     File checkedRotate = removeMetadataAndFixOrientation(originalFile, extension);
 
     // 5. 메타데이터 삭제 이미지 업로드
-    uploadImageToMinio(checkedRotate, storedFileName, extension);
+    uploadRemoveExifImage(checkedRotate, storedFileName, extension);
 
     // 6. 원본 이미지 cdnUrl 추가
     OriginalFileInfo originalFileInfo = OriginalFileInfo.createCdnUrl(storedFileName, cdnBaseUrl);
@@ -203,7 +203,7 @@ public class ConvertService {
   }
 
   @Async
-  public void uploadImageToMinio(File checkedRotate, String fileName, String extension) {
+  public void uploadRemoveExifImage(File checkedRotate, String fileName, String extension) {
     try {
       minioClient.putObject(
               PutObjectArgs.builder()
@@ -245,7 +245,6 @@ public class ConvertService {
     }
   }
 
-  @Async
   public void cleanupTemporaryFiles(File... files) {
     for (File file : files) {
       if (file.exists()) {

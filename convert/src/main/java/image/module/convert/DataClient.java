@@ -9,5 +9,5 @@ import org.springframework.web.bind.annotation.RequestBody;
 public interface DataClient {
 
   @PostMapping("/image/create/cdnUrl")
-  void createCdnUrl(@RequestBody OriginalFileInfo updateImageData);
+  void createCdnUrl(@RequestBody OriginalFileInfo originalFileInfo);
 }
