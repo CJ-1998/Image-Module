@@ -11,16 +11,16 @@ import java.util.UUID;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class UpdateImageData {
+public class OriginalFileInfo {
 
     private UUID id;
     private String storedFileName;
     private String cdnBaseUrl;
 
-    public static UpdateImageData create(String storedFileName, String cdnBaseUrl) {
+    public static OriginalFileInfo createCdnUrl(String storedFileName, String cdnBaseUrl) {
         String cdnUrl = cdnBaseUrl + "/" + UUID.randomUUID(); //cdn 이름 확정
 
-        return UpdateImageData.builder()
+        return OriginalFileInfo.builder()
                 .storedFileName(storedFileName)
                 .cdnBaseUrl(cdnUrl)
                 .build();

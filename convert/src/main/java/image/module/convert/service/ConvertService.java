@@ -7,29 +7,29 @@ import com.drew.metadata.exif.ExifIFD0Directory;
 import com.sksamuel.scrimage.ImmutableImage;
 import com.sksamuel.scrimage.webp.WebpWriter;
 import image.module.convert.DataClient;
-import image.module.convert.dto.SendKafkaMessage;
-import image.module.convert.dto.UpdateImageData;
 import image.module.convert.dto.OriginalImageResponse;
+import image.module.convert.dto.SendKafkaMessage;
+import image.module.convert.dto.OriginalFileInfo;
 import io.minio.*;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.imgscalr.Scalr;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.IOException;
+import java.io.FileOutputStream;
 import java.io.InputStream;
 
 @Slf4j
 @Service
-public class ImageService {
+public class ConvertService {
   @Value("${minio.buckets.downloadBucket}")
   private String originalBucket;
 
@@ -44,7 +44,7 @@ public class ImageService {
 
   private final KafkaTemplate<String, SendKafkaMessage> kafkaTemplate;
 
-  public ImageService(MinioClient minioClient, DataClient dataClient, KafkaTemplate<String, SendKafkaMessage> kafkaTemplate) {
+  public ConvertService(MinioClient minioClient, DataClient dataClient, KafkaTemplate<String, SendKafkaMessage> kafkaTemplate) {
     this.minioClient = minioClient;
     this.dataClient = dataClient;
     this.kafkaTemplate = kafkaTemplate;
@@ -53,45 +53,42 @@ public class ImageService {
   // 전체 이미지 처리 로직을 관리하는 메서드
   @KafkaListener(topics = "image-upload-topic", groupId = "image-upload-group")
   public void removeMetadataAndCovertWebP(OriginalImageResponse originalImage) {
-    String StoredFileName = originalImage.getStoredFileName();
+    String storedFileName = originalImage.getStoredFileName();
     Integer size = originalImage.getRequestSize();
 
-    // 확장자 추출
-    String extension = extractExtensionFromMinio(StoredFileName);
+    // 1. 확장자 추출
+    String extension = extractExtensionFrom(storedFileName);
 
-    // 이미지 다운로드
-    InputStream originalFile = downloadImage(StoredFileName); // 다운로드
+    // 2. 이미지 다운로드
+    File originalFile = downloadImage(storedFileName);
 
-    // 원본 이미지 복사
-    File copyOriginalFile = copyOriginalImage(originalFile, extension);
+    // 3. MINIO 원본 이미지 삭제
+    removeOriginalImage(storedFileName);
 
-    //  4. MINIO 원본 이미지 삭제
-    removeOriginalImage(StoredFileName);
+    // 4. EXIF 메타 데이터 삭제 및 이미지 회전 처리
+    File checkedRotate = removeMetadataAndFixOrientation(originalFile, extension);
 
-    // 5. EXIF 메타 데이터 삭제 및 이미지 회전 처리
-    File checkedRotate = removeMetadataAndFixOrientation(copyOriginalFile, extension);
-    // MINIO로 업로드
-    uploadImageToMinio(checkedRotate, StoredFileName, extension);
+    // 5. 메타데이터 삭제 이미지 업로드
+    uploadRemoveExifImage(checkedRotate, storedFileName, extension);
 
-    // 6. 복사 이미지 WebP로 변환
-    File webpFile = convertToWebp(StoredFileName, copyOriginalFile);
+    // 6. 원본 이미지 cdnUrl 추가
+    OriginalFileInfo originalFileInfo = OriginalFileInfo.createCdnUrl(storedFileName, cdnBaseUrl);
+    dataClient.createCdnUrl(originalFileInfo);
 
-    // 7. WebP 이미지 업로드
+    // 7. WebP로 변환
+    File webpFile = convertToWebp(storedFileName, originalFile);
+
+    // 8. WebP 이미지 업로드
     uploadWebPImage(webpFile);
-
-    // 8. 원본 이미지 cdnUrl 추가
-    UpdateImageData updateImageDataInfo = UpdateImageData.create(StoredFileName, cdnBaseUrl);
-    dataClient.updateImageData(updateImageDataInfo);
 
     kafkaTemplate.send("image-resize-topic", SendKafkaMessage.createMessage(webpFile.getName(), size));
 
     // 9. 임시 파일 삭제
-    cleanupTemporaryFiles(copyOriginalFile, checkedRotate, webpFile);
+    cleanupTemporaryFiles(originalFile, checkedRotate, webpFile);
   }
 
 
-  // 확장자 추출 메서드
-  private String extractExtensionFromMinio(String fileName) {
+  public String extractExtensionFrom(String fileName) {
     try {
       StatObjectResponse statObject = minioClient.statObject(
               StatObjectArgs.builder()
@@ -111,7 +108,7 @@ public class ImageService {
   }
 
   // 확장자 추출
-  private String extractExtensionFromContentType(String contentType) {
+  public String extractExtensionFromContentType(String contentType) {
     if ("image/jpeg".equals(contentType) || "image/jpg".equals(contentType)) {
       return "jpg";
     } else if ("image/png".equals(contentType)) {
@@ -121,34 +118,35 @@ public class ImageService {
     }
   }
 
-  // 이미지 다운로드
-  public InputStream downloadImage(String fileName) {
-    try {
-      return minioClient.getObject(
-              GetObjectArgs.builder()
-                      .bucket(originalBucket)
-                      .object(fileName)
-                      .build()
-      );
+
+  public File downloadImage(String fileName) {
+    File file = null;
+    try (InputStream inputStream = minioClient.getObject(
+            GetObjectArgs.builder()
+                    .bucket(originalBucket)
+                    .object(fileName)
+                    .build())) {
+
+      // 임시 파일 생성
+      file = File.createTempFile("image_", "_" + fileName);
+
+      // InputStream을 File로 저장
+      try (FileOutputStream outputStream = new FileOutputStream(file)) {
+        byte[] buffer = new byte[1024];
+        int bytesRead;
+        while ((bytesRead = inputStream.read(buffer)) != -1) {
+          outputStream.write(buffer, 0, bytesRead);
+        }
+      }
+
     } catch (Exception e) {
       throw new IllegalArgumentException("이미지 다운로드 실패: " + e.getMessage());
     }
+    return file;
   }
 
-  // 원본 이미지 복사
-  private File copyOriginalImage(InputStream originalFile, String extension) {
-    File copyOriginalFile = null;
-    try {
-      copyOriginalFile = File.createTempFile("copy-", "." + extension); // 임시 파일 생성
-      FileUtils.copyInputStreamToFile(originalFile, copyOriginalFile); // 생성된 임시 파일에 원본 파일 복사
-    } catch (IOException e) {
-      throw new IllegalArgumentException("이미지 복사 실패: " + e.getMessage());
-    }
-    return copyOriginalFile;
-  }
-
-  // 3. MINIO의 원본 이미지 삭제
-  private void removeOriginalImage(String fileName) {
+  @Async
+  public void removeOriginalImage(String fileName) {
     try {
       minioClient.removeObject(
               RemoveObjectArgs.builder()
@@ -161,18 +159,16 @@ public class ImageService {
     }
   }
 
-  // 5. EXIF 메타 데이터 삭제 및 이미지 회전 처리
-  private File removeMetadataAndFixOrientation(File copyOriginalFile, String extension) {
+  public File removeMetadataAndFixOrientation(File originalFile, String extension) {
     try {
-
-      BufferedImage bufferedImage = ImageIO.read(copyOriginalFile);
+      BufferedImage bufferedImage = ImageIO.read(originalFile);
 
       int orientation = 1;
       Metadata metadata;
       Directory directory;
 
       try {
-        metadata = ImageMetadataReader.readMetadata(copyOriginalFile);
+        metadata = ImageMetadataReader.readMetadata(originalFile);
         directory = metadata.getFirstDirectoryOfType(ExifIFD0Directory.class);
         if (directory != null) {
           orientation = directory.getInt(ExifIFD0Directory.TAG_ORIENTATION);
@@ -195,7 +191,6 @@ public class ImageService {
           break; // orientation 1일 때는 아무 작업도 하지 않음
       }
 
-
       // 임시 파일 생성
       File imageRotateFile = File.createTempFile("rotate-", "." + extension);
       // 새로운 파일로 저장
@@ -207,16 +202,15 @@ public class ImageService {
     }
   }
 
-  // MINIO로 업로드
-  private void uploadImageToMinio(File file, String fileName, String extension) {
+  @Async
+  public void uploadRemoveExifImage(File checkedRotate, String fileName, String extension) {
     try {
-      // MINIO에 파일 업로드
       minioClient.putObject(
               PutObjectArgs.builder()
                       .bucket(originalBucket)
-                      .object(fileName) // 동일한 이름으로 업로드
-                      .stream(new FileInputStream(file), file.length(), -1)
-                      .contentType("image/" + extension) // 업로드할 이미지의 content type 지정
+                      .object(fileName)
+                      .stream(new FileInputStream(checkedRotate), checkedRotate.length(), -1)
+                      .contentType("image/" + extension)
                       .build()
       );
     } catch (Exception e) {
@@ -224,9 +218,21 @@ public class ImageService {
     }
   }
 
+  public File convertToWebp(String fileName, File originalFile) {
+    try {
+      String uploadFileName = FilenameUtils.getBaseName(fileName) + ".webp"; // MINIO에 업로드할 최종 파일 이름
+      File outputFile = new File(originalFile.getParent(), uploadFileName);
 
-  // WebP 파일 업로드
-  private void uploadWebPImage(File webpFile) {
+      return ImmutableImage.loader()
+              .fromFile(originalFile)
+              .output(WebpWriter.DEFAULT, outputFile); // 손실 압축
+    } catch (Exception e) {
+      throw new RuntimeException(e.getMessage());
+    }
+  }
+
+  @Async
+  public void uploadWebPImage(File webpFile) {
     try (InputStream webpInputStream = new FileInputStream(webpFile)) {
       minioClient.putObject(PutObjectArgs.builder()
               .bucket(uploadBucket)
@@ -239,22 +245,7 @@ public class ImageService {
     }
   }
 
-  // 복사 이미지 WebP 파일로 변환
-  public File convertToWebp(String fileName, File copyOriginalFile) {
-    try {
-      String uploadFileName = FilenameUtils.getBaseName(fileName) + ".webp"; // MINIO에 업로드할 최종 파일 이름
-      File outputFile = new File(copyOriginalFile.getParent(), uploadFileName);
-
-      return ImmutableImage.loader()
-              .fromFile(copyOriginalFile)
-              .output(WebpWriter.DEFAULT, outputFile); // 손실 압축
-    } catch (Exception e) {
-      throw new RuntimeException(e.getMessage());
-    }
-  }
-
-  // 임시 파일 삭제
-  private void cleanupTemporaryFiles(File... files) {
+  public void cleanupTemporaryFiles(File... files) {
     for (File file : files) {
       if (file.exists()) {
         boolean deleted = file.delete();

@@ -9,7 +9,7 @@ import java.util.UUID;
 @Getter
 @AllArgsConstructor
 @NoArgsConstructor
-public class UpdateImageData {
+public class OriginalFileInfo {
   private UUID id;
   private String storedFileName;
   private String cdnBaseUrl;

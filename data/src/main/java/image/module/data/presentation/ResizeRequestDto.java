@@ -11,7 +11,7 @@ import java.util.UUID;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class CreateResizeRequest
+public class ResizeRequestDto
 {
     private UUID id;
     private String storedFileName;

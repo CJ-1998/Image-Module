@@ -1,7 +1,6 @@
 package image.module.convert;
 
-import image.module.convert.dto.ImageRequest;
-import image.module.convert.dto.UpdateImageData;
+import image.module.convert.dto.OriginalFileInfo;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -9,6 +8,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 @FeignClient(name = "data")
 public interface DataClient {
 
-  @PostMapping("/image/update")
-  void updateImageData(@RequestBody UpdateImageData updateImageData);
+  @PostMapping("/image/create/cdnUrl")
+  void createCdnUrl(@RequestBody OriginalFileInfo originalFileInfo);
 }

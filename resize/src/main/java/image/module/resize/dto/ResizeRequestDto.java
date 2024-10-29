@@ -11,7 +11,7 @@ import java.util.UUID;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class CreateResizeRequest
+public class ResizeRequestDto
 {
 
     private UUID id;
@@ -21,11 +21,11 @@ public class CreateResizeRequest
     private String type;
 
 
-    public static CreateResizeRequest create(String storedFileName, Integer size, String cdnBaseUrl) {
+    public static ResizeRequestDto createResizeImage(String storedFileName, Integer size, String cdnBaseUrl) {
         String cdnUrl = cdnBaseUrl + "/" + UUID.randomUUID(); //cdn 이름 확정
         String type = "webp";
 
-        return CreateResizeRequest.builder()
+        return ResizeRequestDto.builder()
                 .storedFileName(storedFileName)
                 .size(size)
                 .cdnBaseUrl(cdnUrl)
