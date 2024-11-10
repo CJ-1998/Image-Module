@@ -76,6 +76,6 @@
 | **안지연** | UploadServer | - 이미지 minio 업로드<br>- 원본 데이터 저장<br>- 서버 배포<br>- AWS EC2, RDS<br>- Dockerfile 생성<br>- docker-compose.yml 생성                                      | (https://github.com/jiyeonahn) |
 | **서병준** | convertServer<br>resizeServer | - 이미지 원본 다운로드<br>- 원본 이미지 메타데이터 저장<br>- 원본 CDN 주소 저장<br>- WebP로의 변환<br>- 사용자가 원하는 크기로 리사이징<br>- 리사이징된 이미지 저장 및 DB 저장<br>- WebP 이미지 업로드 | (https://github.com/mad-cost) |
 | **최준**   | CdnServer    | - CDN 서버 구축<br>- 이미지 캐싱<br>- 이미지 조회 및 다운로드<br>- CDN Server 최적화<br>- Backend Client 라이브러리 작성                                      | (https://github.com/CJ-1998) |
-| **노민경** | fetchServer  | - 해둔 이미지의 CDN URL 반환<br>- CDN URL 값 전달 및 조회, 메시지 반환<br>- 이미지 메타데이터 반환<br>- File Name, Type, Caching Time, 이미지 바이트 반환            | (https://github.com/minjingims) |
+| **노민경** | fetchServer  | - 해둔 이미지의 CDN URL 반환<br>- CDN URL 값 전달 및 조회, 메시지 반환<br>- 이미지 메타데이터 반환<br>- File Name, Type, Caching Time, 이미지 바이트 반환            | (https://github.com/minjjings) |
 
 
