@@ -1,0 +1,15 @@
+minio:
+  url: ${MINIO_ENDPOINT}
+  access:
+    key: ${MINIO_ACCESS_KEY}
+    secret: ${MINIO_SECRET_KEY}
+  buckets:
+    downloadBucket: ${MINIO_BUCKET_DOWNLOAD}
+    uploadBucket: ${MINIO_BUCKET_UPLOAD}
+
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_SERVER_URL}
+    register-with-eureka: true
+    fetch-registry: true
