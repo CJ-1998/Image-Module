@@ -4,3 +4,7 @@
 ### 환경 설정 파일 ###
 .env*
 !env.template
+
+### minio ###
+minio_data/*
+data_minio/*
