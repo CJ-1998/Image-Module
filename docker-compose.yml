@@ -9,7 +9,7 @@ services:
     networks:
       - image_network
     env_file:
-      - .env
+      - .env.dev
   gateway:
     build:
       dockerfile: Dockerfile
@@ -22,7 +22,7 @@ services:
     depends_on:
       - eureka
     env_file:
-      - .env
+      - .env.dev
   cdn:
     build:
       dockerfile: Dockerfile
@@ -35,7 +35,7 @@ services:
     volumes:
       - ./cdn/images:/app/cdn/images  # 로컬 cdn 폴더의 images 폴더를 컨테이너에 매핑
     env_file:
-      - .env
+      - .env.dev
   url:
     build:
       dockerfile: Dockerfile
@@ -46,7 +46,7 @@ services:
     networks:
       - image_network
     env_file:
-      - .env
+      - .env.dev
   data:
     build:
       dockerfile: Dockerfile
@@ -57,7 +57,7 @@ services:
     networks:
       - image_network
     env_file:
-      - .env
+      - .env.dev
   upload:
     build:
       dockerfile: Dockerfile
@@ -68,7 +68,7 @@ services:
     networks:
       - image_network
     env_file:
-      - .env
+      - .env.dev
   convert:
     build:
       dockerfile: Dockerfile
@@ -79,7 +79,7 @@ services:
     networks:
       - image_network
     env_file:
-      - .env
+      - .env.dev
   resize:
     build:
       dockerfile: Dockerfile
@@ -90,7 +90,7 @@ services:
     networks:
       - image_network
     env_file:
-      - .env
+      - .env.dev
   server-data-db:
     container_name: server_data_db
     image: postgres
@@ -172,7 +172,7 @@ services:
     image: provectuslabs/kafka-ui:latest
     platform: linux/amd64
     ports:
-      - "8080:8080"
+      - "9080:8080"
     environment:
       KAFKA_CLUSTERS_0_NAME: local
       KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:29092

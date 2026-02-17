@@ -2,4 +2,5 @@
 /.idea/
 
 ### 환경 설정 파일 ###
-.env
+.env*
+!env.template
