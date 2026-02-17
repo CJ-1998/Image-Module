@@ -2,7 +2,6 @@ spring:
   application:
     name: resize
   kafka:
-    bootstrap-servers: kafka:29092
     consumer:
       key-deserializer: org.springframework.kafka.support.serializer.ErrorHandlingDeserializer
       value-deserializer: org.springframework.kafka.support.serializer.ErrorHandlingDeserializer
@@ -20,27 +19,3 @@ spring:
               mapping: "image.module.convert.dto.SendKafkaMessage:image.module.resize.dto.ReceiveKafkaMessage"
 server:
   port: 19098
-
-eureka:
-  client:
-    service-url:
-      defaultZone: http://eureka:19090/eureka/
-
-logging:
-  level:
-    org:
-      hibernate:
-        orm:
-          jdbc:
-            bind: trace
-
-minio:
-  url: http://minio:9000
-  access:
-    key: minio
-    secret: minioadmin
-  buckets:
-    uploadBucket: update-bucket
-
-cdn-server:
-  url: http://localhost:19096/cdn
