@@ -1,74 +1,30 @@
-# 서비스 이름 및 환경 분리
 spring:
-  main:
-    web-application-type: reactive  # Spring 애플리케이션이 리액티브 웹 애플리케이션으로 설정됨
   application:
     name: gateway
-  profiles:
-    active: dev
+  main:
+    web-application-type: reactive
   cloud:
     gateway:
-      routes: # Spring Cloud Gateway의 라우팅 설정
-        # TODO : 다른 서비스 설정 완료 시 추가 예정
-        - id: upload # 라우트 식별자
-          uri: lb://upload  # 이름으로 로드 밸런싱된 서비스로 라우팅
-          predicates:
-            - Path=/image/upload/**  # 경로로 들어오는 요청을 이 라우트로 처리
-        - id: cdn # 라우트 식별자
-          uri: lb://cdn  # 이름으로 로드 밸런싱된 서비스로 라우팅
-          predicates:
-            - Path=/cdn/**  # 경로로 들어오는 요청을 이 라우트로 처리
-        - id: fetch # 라우트 식별자
-          uri: lb://fetch  # 이름으로 로드 밸런싱된 서비스로 라우팅
-          predicates:
-            - Path=/fetch/**  # 경로로 들어오는 요청을 이 라우트로 처리
       discovery:
         locator:
-          enabled: true  # 서비스 디스커버리를 통해 동적으로 라우트를 생성하도록 설정
-
-
+          enabled: true
+      routes:
+        - id: upload
+          uri: lb://upload
+          predicates:
+            - Path=/image/upload/**
+        - id: cdn
+          uri: lb://cdn
+          predicates:
+            - Path=/cdn/**
+        - id: fetch
+          uri: lb://fetch
+          predicates:
+            - Path=/fetch/**
 server:
   port: 19091
-
-resilience4j:
-  circuitbreaker:
-    configs:
-      default:
-        registerHealthIndicator: true
-        slidingWindowType: COUNT_BASED
-        slidingWindowSize: 5
-        minimumNumberOfCalls: 5
-        slowCallRateThreshold: 100
-        slowCallDurationThreshold: 60000
-        failureRateThreshold: 50
-        permittedNumberOfCallsInHalfOpenState: 3
-        waitDurationInOpenState: 20s
-
 management:
   endpoints:
     web:
       exposure:
         include: health, prometheus
-  endpoint:
-    health:
-      show-details: always
-    prometheus:
-      enabled: true
-  prometheus:
-    metrics:
-      export:
-        enabled: true
-  zipkin:
-    tracing:
-      endpoint: "http://zipkin:9411/api/v2/spans"
-  tracing:
-    sampling:
-      probability: 1.0
-
-
-eureka:
-  client:
-    service-url:
-      defaultZone: http://eureka:19090/eureka/  # Eureka 서버 URL
-    register-with-eureka: true  # Eureka 서버에 등록
-    fetch-registry: true  # Eureka 서버로부터 레지스트리 정보 가져오기

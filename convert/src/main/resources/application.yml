@@ -2,7 +2,6 @@ spring:
   application:
     name: convert
   kafka:
-    bootstrap-servers: kafka:29092
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
@@ -23,28 +22,3 @@ spring:
               mapping: "image.module.upload.application.ImageUploadMessage:image.module.convert.dto.OriginalImageResponse"
 server:
   port: 19097
-
-eureka:
-  client:
-    service-url:
-      defaultZone: http://eureka:19090/eureka/
-
-logging:
-  level:
-    org:
-      hibernate:
-        orm:
-          jdbc:
-            bind: trace
-
-minio:
-  url: http://minio:9000
-  access:
-    key: minio
-    secret: minioadmin
-  buckets:
-    downloadBucket: mybucket
-    uploadBucket: update-bucket
-
-cdn-server:
-  url: http://localhost:19096/cdn

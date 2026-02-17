@@ -1,68 +1,111 @@
 version: '3.8'
 
 services:
-  # --- Infrastructure Services ---
+  # =========================================
+  # 1. Infrastructure Services (Base)
+  # =========================================
   server-data-db:
     container_name: server_data_db
     image: postgres:15
+    restart: always
     volumes:
       - server_data_db:/var/lib/postgresql/data
     networks:
       - image_network
+    environment:
+      # .env 파일에서 주입받은 값으로 DB 초기화
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
 
   redis:
-    image: redis:latest
+    image: redis:alpine
     container_name: image_redis
     networks:
       - image_network
 
+  minio:
+    image: minio/minio
+    container_name: minio
+    volumes:
+      - ./data_minio:/data
+    networks:
+      - image_network
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+    command: server /data --console-address ":9001"
+
   zipkin:
     image: openzipkin/zipkin
     container_name: image_zipkin
+    restart: always
     networks:
       - image_network
 
   zookeeper:
     image: wurstmeister/zookeeper:latest
-    platform: linux/amd64
     networks:
       - image_network
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
 
   kafka:
     image: wurstmeister/kafka:latest
-    platform: linux/amd64
     networks:
       - image_network
     depends_on:
       - zookeeper
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      # 내부/외부 리스너 설정 (개발 편의성 개선)
+      KAFKA_ADVERTISED_LISTENERS: INSIDE://kafka:9092,OUTSIDE://localhost:29092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INSIDE:PLAINTEXT,OUTSIDE:PLAINTEXT
+      KAFKA_LISTENERS: INSIDE://0.0.0.0:9092,OUTSIDE://0.0.0.0:29092
+      KAFKA_INTER_BROKER_LISTENER_NAME: INSIDE
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
 
-  minio:
-    image: minio/minio
-    container_name: minio
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
     networks:
       - image_network
+    environment:
+      KAFKA_CLUSTERS_0_NAME: local
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9092
+      KAFKA_CLUSTERS_0_ZOOKEEPER: zookeeper:2181
+      KAFKA_CLUSTERS_0_READONLY: "false"
 
-  # --- Application Services (Skeleton) ---
+  # =========================================
+  # 2. Application Services (Base)
+  # =========================================
   eureka:
+    build:
+      dockerfile: Dockerfile
+      context: .
+      args:
+        - FILE_DIRECTORY=./eureka
     networks:
       - image_network
 
   gateway:
+    build:
+      dockerfile: Dockerfile
+      context: .
+      args:
+        - FILE_DIRECTORY=./gateway
     networks:
       - image_network
     depends_on:
       - eureka
-
-  upload:
-    networks:
-      - image_network
-    depends_on:
-      - eureka
-      - kafka
 
   cdn:
+    build:
+      dockerfile: Dockerfile
+      context: .
+      args:
+        - FILE_DIRECTORY=./cdn
     networks:
       - image_network
     depends_on:
@@ -70,19 +113,46 @@ services:
       - redis
 
   url:
+    build:
+      dockerfile: Dockerfile
+      context: .
+      args:
+        - FILE_DIRECTORY=./url
     networks:
       - image_network
     depends_on:
       - eureka
 
   data:
+    build:
+      dockerfile: Dockerfile
+      context: .
+      args:
+        - FILE_DIRECTORY=./data
     networks:
       - image_network
     depends_on:
       - eureka
       - server-data-db
 
+  upload:
+    build:
+      dockerfile: Dockerfile
+      context: .
+      args:
+        - FILE_DIRECTORY=./upload
+    networks:
+      - image_network
+    depends_on:
+      - eureka
+      - kafka
+
   convert:
+    build:
+      dockerfile: Dockerfile
+      context: .
+      args:
+        - FILE_DIRECTORY=./convert
     networks:
       - image_network
     depends_on:
@@ -90,15 +160,20 @@ services:
       - kafka
 
   resize:
+    build:
+      dockerfile: Dockerfile
+      context: .
+      args:
+        - FILE_DIRECTORY=./resize
     networks:
       - image_network
     depends_on:
       - eureka
       - kafka
 
+volumes:
+  server_data_db:
+
 networks:
   image_network:
     driver: bridge
-
-volumes:
-  server_data_db:

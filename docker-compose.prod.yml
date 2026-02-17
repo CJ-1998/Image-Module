@@ -5,139 +5,89 @@
 version: '3.8'
 
 services:
-  # --- Infra (Prod Config) ---
+  # --- Infra (Secure Mode) ---
+  # 운영 환경에서는 DB 포트를 외부에 열지 않거나, 외부 관리형 DB를 사용함
   server-data-db:
     restart: always
-    environment:
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: ${POSTGRES_DB}
-    # Prod 보안: DB 포트 노출 X
+    env_file: .env.prod
+    # ports 섹션 없음 (내부 통신만 허용)
+
+  minio:
+    restart: always
+    env_file: .env.prod
+    # ports 섹션 없음 (Gateway나 서비스를 통해서만 접근 권장)
+    # 단, MinIO Console 접속이 필요하다면 포트를 열어야 함
 
   redis:
     restart: always
 
-  zipkin:
-    restart: always
-
-  minio:
-    restart: always
-    environment:
-      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
-      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
-    command: server /data --console-address ":9001"
-    volumes:
-      - ./prod_data/minio:/data # 운영 데이터 영구 보존 경로
-
-  zookeeper:
-    restart: always
-    environment:
-      ZOOKEEPER_CLIENT_PORT: 2181
-      ZOOKEEPER_TICK_TIME: 2000
-
   kafka:
     restart: always
-    environment:
-      KAFKA_ADVERTISED_LISTENERS: ${KAFKA_ADVERTISED_LISTENERS}
-      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INSIDE:PLAINTEXT
-      KAFKA_LISTENERS: INSIDE://0.0.0.0:9092
-      KAFKA_INTER_BROKER_LISTENER_NAME: INSIDE
-      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
 
-  # --- Apps (Build in Prod) ---
-
+  # --- Apps (Prod Profile & Env) ---
   eureka:
-    build:
-      context: .
-      dockerfile: Dockerfile
-      args:
-        - FILE_DIRECTORY=./eureka
-    restart: always
-    environment:
-      - SPRING_PROFILES_ACTIVE=prod
-    # 내부 통신용이므로 포트 노출 X
-
-  gateway:
-    build:
-      context: .
-      dockerfile: Dockerfile
-      args:
-        - FILE_DIRECTORY=./gateway
     restart: always
     ports:
-      - "19091:19091" # 유일한 외부 입구
+      - "19090:19090"
+    env_file: .env.prod
+    environment:
+      - SPRING_PROFILES_ACTIVE=prod
+
+  gateway:
+    restart: always
+    ports:
+      - "19091:19091"
+    env_file: .env.prod
+    environment:
+      - SPRING_PROFILES_ACTIVE=prod
+
+  cdn:
+    restart: always
+    ports:
+      - "19096:19096"
+    volumes:
+      # 운영용 경로 매핑 (.env.prod 참조)
+      - ${CDN_LOCAL_PATH}:/app/cdn/images
+    env_file: .env.prod
+    environment:
+      - SPRING_PROFILES_ACTIVE=prod
+
+  url:
+    restart: always
+    ports:
+      - "19093:19093"
+    env_file: .env.prod
+    environment:
+      - SPRING_PROFILES_ACTIVE=prod
+
+  data:
+    restart: always
+    ports:
+      - "19095:19095"
+    env_file: .env.prod
     environment:
       - SPRING_PROFILES_ACTIVE=prod
 
   upload:
-    build:
-      context: .
-      dockerfile: Dockerfile
-      args:
-        - FILE_DIRECTORY=./upload
     restart: always
+    ports:
+      - "19092:19092"
+    env_file: .env.prod
     environment:
       - SPRING_PROFILES_ACTIVE=prod
-      - KAFKA_SERVERS=${KAFKA_URL}
-      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=${EUREKA_URL}
-
-  cdn:
-    build:
-      context: .
-      dockerfile: Dockerfile
-      args:
-        - FILE_DIRECTORY=./cdn
-    restart: always
-    volumes:
-      - ./prod_data/cdn/images:/app/cdn/images # 운영용 영구 저장소
-    environment:
-      - SPRING_PROFILES_ACTIVE=prod
-      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=${EUREKA_URL}
-
-  url:
-    build:
-      context: .
-      dockerfile: Dockerfile
-      args:
-        - FILE_DIRECTORY=./url
-    restart: always
-    environment:
-      - SPRING_PROFILES_ACTIVE=prod
-      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=${EUREKA_URL}
-
-  data:
-    build:
-      context: .
-      dockerfile: Dockerfile
-      args:
-        - FILE_DIRECTORY=./data
-    restart: always
-    environment:
-      - SPRING_PROFILES_ACTIVE=prod
-      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=${EUREKA_URL}
-      - SPRING_DATASOURCE_USERNAME=${POSTGRES_USER}
-      - SPRING_DATASOURCE_PASSWORD=${POSTGRES_PASSWORD}
 
   convert:
-    build:
-      context: .
-      dockerfile: Dockerfile
-      args:
-        - FILE_DIRECTORY=./convert
     restart: always
+    ports:
+      - "19097:19097"
+    env_file: .env.prod
     environment:
       - SPRING_PROFILES_ACTIVE=prod
-      - KAFKA_SERVERS=${KAFKA_URL}
-      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=${EUREKA_URL}
 
   resize:
-    build:
-      context: .
-      dockerfile: Dockerfile
-      args:
-        - FILE_DIRECTORY=./resize
     restart: always
+    ports:
+      - "19098:19098"
+    env_file: .env.prod
     environment:
       - SPRING_PROFILES_ACTIVE=prod
-      - KAFKA_SERVERS=${KAFKA_URL}
-      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=${EUREKA_URL}

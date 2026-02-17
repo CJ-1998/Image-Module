@@ -1,19 +1,8 @@
 spring:
   application:
     name: cdn
-  data:
-    redis:
-      host: redis  # Redis 서버의 호스트명
-      port: 6379       # Redis 서버 포트
-
 server:
   port: 19096
-
-cdn:
-  image:
-    path: "./cdn/images/"
-    url: "localhost"
-
 resilience4j:
   circuitbreaker:
     configs:
@@ -22,37 +11,10 @@ resilience4j:
         slidingWindowType: COUNT_BASED
         slidingWindowSize: 5
         minimumNumberOfCalls: 5
-        slowCallRateThreshold: 100
-        slowCallDurationThreshold: 60000
         failureRateThreshold: 50
-        permittedNumberOfCallsInHalfOpenState: 3
         waitDurationInOpenState: 20s
-
 management:
   endpoints:
     web:
       exposure:
         include: health, prometheus
-  endpoint:
-    health:
-      show-details: always
-    prometheus:
-      enabled: true
-  prometheus:
-    metrics:
-      export:
-        enabled: true
-  #  zipkin:
-  #    tracing:
-  #      endpoint: "http://zipkin:9411/api/v2/spans"
-  tracing:
-    sampling:
-      probability: 1.0
-
-
-eureka:
-  client:
-    service-url:
-      defaultZone: http://eureka:19090/eureka/  # Eureka 서버 URL
-    register-with-eureka: true  # Eureka 서버에 등록
-    fetch-registry: true  # Eureka 서버로부터 레지스트리 정보 가져오기
