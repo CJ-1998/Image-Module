@@ -2,28 +2,12 @@ spring:
   application:
     name: upload
   kafka:
-    bootstrap-servers: kafka:29092
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
   servlet:
     multipart:
-      max-file-size: 1GB # 최대 파일 사이즈
-      max-request-size: 1GB # 최대 요청 사이즈
-
+      max-file-size: 1GB
+      max-request-size: 1GB
 server:
   port: 19092
-
-eureka:
-  client:
-    service-url:
-      defaultZone: http://eureka:19090/eureka/
-
-minio:
-  url: http://minio:9000
-  accessKey: minio
-  secretKey: minioadmin
-  bucket: mybucket
-
-cdn-server:
-  url: http://localhost:19096/cdn
