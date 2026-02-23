@@ -10,12 +10,21 @@ clients:
 
 scrape_configs:
   - job_name: 'docker-containers'
-    static_configs:
-      - targets:
-          - localhost
-        labels:
-          job: docker
-          __path__: /var/lib/docker/containers/*/*log
+    # 도커 데몬을 통해 자동으로 컨테이너들을 찾아냅니다 (Service Discovery)
+    docker_sd_configs:
+      - host: unix:///var/run/docker.sock
+        refresh_interval: 5s
+    # 도커가 알려준 메타데이터에서 이름 앞에 붙은 '/'를 제거하고 라벨로 만듭니다.
+    relabel_configs:
+      - source_labels: ['__meta_docker_container_name']
+        regex: '/(.*)'
+        target_label: 'container'
+      - source_labels: ['__meta_docker_container_name']
+        regex: '/(.*)'
+        # [핵심] Loki의 로그 라벨도 'application'으로 맞추어 Prometheus와 연동되게 합니다.
+        target_label: 'application'
+      - source_labels: ['__meta_docker_container_log_stream']
+        target_label: 'stream'
 
     # 도커 로그의 복잡한 JSON에서 컨테이너 이름(서비스명)만 깔끔하게 라벨링하는 파이프라인
     pipeline_stages:
