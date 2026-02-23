@@ -36,10 +36,51 @@ services:
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
     command: server /data --console-address ":9001"
 
+  # [트레이싱] Zipkin
   zipkin:
-    image: openzipkin/zipkin
-    container_name: image_zipkin
+    image: openzipkin/zipkin:latest
+    container_name: zipkin
     restart: always
+    networks:
+      - image_network
+
+  # [메트릭 수집] Prometheus
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    restart: always
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+    networks:
+      - image_network
+
+  # [시각화] Grafana
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    restart: always
+    environment:
+      - GF_SECURITY_ADMIN_USER=${GRAFANA_ADMIN_USER}
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD}
+    networks:
+      - image_network
+
+  # [로그 수집 DB] Loki
+  loki:
+    image: grafana/loki:latest
+    container_name: loki
+    restart: always
+    command: -config.file=/etc/loki/local-config.yaml
+    networks:
+      - image_network
+
+  # [로그 에이전트] Promtail
+  promtail:
+    image: grafana/promtail:latest
+    container_name: promtail
+    restart: always
+    command: -config.file=/etc/promtail/config.yml
     networks:
       - image_network
 

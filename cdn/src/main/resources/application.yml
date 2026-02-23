@@ -21,6 +21,11 @@ management:
       exposure:
         include: health, prometheus, metrics # metrics 추가 권장
 
+  # Prometheus 메트릭에 'application' 라벨을 강제로 붙여주는 설정
+  metrics:
+    tags:
+      application: ${spring.application.name}
+
   # Zipkin 전송 설정
   zipkin:
     tracing:
