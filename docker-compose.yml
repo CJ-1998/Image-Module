@@ -41,6 +41,8 @@ services:
     image: openzipkin/zipkin:latest
     container_name: zipkin
     restart: always
+    networks:
+      - image_network
 
   # [메트릭 수집] Prometheus
   prometheus:
@@ -50,6 +52,8 @@ services:
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
       - '--storage.tsdb.path=/prometheus'
+    networks:
+      - image_network
 
   # [시각화] Grafana
   grafana:
@@ -59,6 +63,8 @@ services:
     environment:
       - GF_SECURITY_ADMIN_USER=${GRAFANA_ADMIN_USER}
       - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD}
+    networks:
+      - image_network
 
   # [로그 수집 DB] Loki
   loki:
@@ -66,6 +72,8 @@ services:
     container_name: loki
     restart: always
     command: -config.file=/etc/loki/local-config.yaml
+    networks:
+      - image_network
 
   # [로그 에이전트] Promtail
   promtail:
@@ -73,6 +81,8 @@ services:
     container_name: promtail
     restart: always
     command: -config.file=/etc/promtail/config.yml
+    networks:
+      - image_network
 
   zookeeper:
     image: wurstmeister/zookeeper:latest
