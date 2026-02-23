@@ -91,3 +91,44 @@ services:
     env_file: .env.prod
     environment:
       - SPRING_PROFILES_ACTIVE=prod
+
+  zipkin:
+    # 운영에서는 보통 9411 포트를 외부로 열지 않고 내부망에서만 통신하게 둡니다.
+    expose:
+      - "9411"
+
+  prometheus:
+    expose:
+      - "9090"
+    volumes:
+      # 운영용 설정 파일 마운트
+      - ./monitoring/prometheus/prometheus.prod.yml:/etc/prometheus/prometheus.yml
+      # [중요] Prometheus 수집 데이터를 호스트에 영구 저장 (컨테이너 재시작 시 날아감 방지)
+      - prometheus_data:/prometheus
+
+  grafana:
+    ports:
+      - "3000:3000" # 관리자 접속을 위해 그라파나만 외부 노출 (원한다면 Nginx/Gateway 뒤로 숨김 가능)
+    volumes:
+      # [중요] 대시보드 및 설정 데이터를 영구 저장
+      - grafana_data:/var/lib/grafana
+
+  loki:
+    expose:
+      - "3100"
+    volumes:
+      - ./monitoring/loki/loki-config.yml:/etc/loki/local-config.yaml
+      # [중요] 수집된 로그 데이터를 영구 저장
+      - loki_data:/loki
+
+  promtail:
+    volumes:
+      - ./monitoring/promtail/promtail-config.yml:/etc/promtail/config.yml
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+
+# [중요] 운영 환경에서 데이터를 영구 보존하기 위한 Docker Named Volumes 선언
+volumes:
+  prometheus_data:
+  grafana_data:
+  loki_data:

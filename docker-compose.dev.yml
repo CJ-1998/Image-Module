@@ -21,10 +21,6 @@ services:
       - "9001:9001"
     env_file: .env.dev
 
-  zipkin:
-    ports:
-      - "9411:9411"
-
   kafka:
     ports:
       - "29092:29092"
@@ -32,7 +28,7 @@ services:
 
   kafka-ui:
     ports:
-      - "9080:8080"
+      - "7080:8080"
 
   # --- Apps (Dev Profile & Env) ---
   eureka:
@@ -93,3 +89,32 @@ services:
     env_file: .env.dev
     environment:
       - SPRING_PROFILES_ACTIVE=dev
+
+  zipkin:
+    ports:
+      - "9411:9411"
+
+  prometheus:
+    ports:
+      - "9090:9090"
+    volumes:
+      # 앞서 만든 dev용 설정 파일을 컨테이너 내부에 마운트합니다.
+      - ./monitoring/prometheus/prometheus.dev.yml:/etc/prometheus/prometheus.yml
+
+  grafana:
+    ports:
+      - "3000:3000"
+    # Dev 환경은 컨테이너가 내려가면 대시보드 데이터가 날아가도 상관없으므로 볼륨 생략 가능
+
+  loki:
+    ports:
+      - "3100:3100"
+    volumes:
+      - ./monitoring/loki/loki-config.yml:/etc/loki/local-config.yaml
+
+  promtail:
+    volumes:
+      - ./monitoring/promtail/promtail-config.yml:/etc/promtail/config.yml
+      # 호스트(내 PC)의 도커 컨테이너 로그가 쌓이는 경로를 읽기 전용(ro)으로 마운트
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
