@@ -1,0 +1,45 @@
+server:
+  http_listen_port: 9080
+  grpc_listen_port: 0
+
+positions:
+  filename: /tmp/positions.yaml # 어디까지 읽었는지 기억하는 포인터 역할
+
+clients:
+  - url: http://loki:3100/loki/api/v1/push
+
+scrape_configs:
+  - job_name: 'docker-containers'
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: docker
+          __path__: /var/lib/docker/containers/*/*log
+
+    # 도커 로그의 복잡한 JSON에서 컨테이너 이름(서비스명)만 깔끔하게 라벨링하는 파이프라인
+    pipeline_stages:
+      - json:
+          expressions:
+            output: log
+            stream: stream
+            attrs:
+      - json:
+          expressions:
+            tag:
+          source: attrs
+      - regex:
+          expression: (?P<image_name>(?:[^|]*[^|])).(?P<container_name>(?:[^|]*[^|])).(?P<image_id>(?:[^|]*[^|])).(?P<container_id>(?:[^|]*[^|]))
+          source: tag
+      - timestamp:
+          format: RFC3339Nano
+          source: time
+      - labels:
+          tag:
+          stream:
+          image_name:
+          container_name:
+          image_id:
+          container_id:
+      - output:
+          source: output
