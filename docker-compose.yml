@@ -56,6 +56,9 @@ services:
     image: grafana/grafana:latest
     container_name: grafana
     restart: always
+    environment:
+      - GF_SECURITY_ADMIN_USER=${GRAFANA_ADMIN_USER}
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD}
 
   # [로그 수집 DB] Loki
   loki:
