@@ -1,0 +1,25 @@
+global:
+  scrape_interval: 1m # 운영 환경은 부하 방지를 위해 1분 (포트폴리오 어필 포인트)
+  evaluation_interval: 1m
+
+scrape_configs:
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  - job_name: 'spring-boot-apps'
+    metrics_path: '/actuator/prometheus'
+    # Prod 환경에서는 외부 노출 방지를 위해 Spring Security나 Basic Auth를 걸람.
+    # basic_auth:
+    #   username: '<PROD_USERNAME>'
+    #   password: '<PROD_PASSWORD>'
+    static_configs:
+      - targets:
+          - 'gateway:19091'
+          - 'eureka:19090'
+          - 'upload:19092'
+          - 'data:19095'
+          - 'resize:19098'
+          - 'convert:19097'
+          - 'cdn:19096'
+          - 'url:19093'
