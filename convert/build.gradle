@@ -51,6 +51,18 @@ dependencies {
 	implementation 'com.drewnoakes:metadata-extractor:2.18.0' // 메타데이터 추출
 	implementation 'org.imgscalr:imgscalr-lib:4.2' // 이미지 수정
 
+	// [모니터링] Actuator: 애플리케이션 상태 및 메트릭 노출
+	implementation 'org.springframework.boot:spring-boot-starter-actuator'
+
+	// [모니터링] Prometheus: Actuator 메트릭을 Prometheus 포맷으로 변환
+	runtimeOnly 'io.micrometer:micrometer-registry-prometheus'
+
+	// [트레이싱] Micrometer Tracing (Spring Boot 3.x 표준)
+	implementation 'io.micrometer:micrometer-tracing-bridge-brave'
+
+	// [트레이싱] Zipkin Reporter: 트레이싱 데이터를 Zipkin 서버로 전송
+	implementation 'io.zipkin.reporter2:zipkin-reporter-brave'
+
 	implementation 'org.springframework.boot:spring-boot-starter-web'
 	compileOnly 'org.projectlombok:lombok'
 	annotationProcessor 'org.projectlombok:lombok'
