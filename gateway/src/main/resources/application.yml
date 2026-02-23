@@ -23,8 +23,25 @@ spring:
             - Path=/fetch/**
 server:
   port: 19091
+
+# 모니터링 및 트레이싱 설정
 management:
   endpoints:
     web:
       exposure:
-        include: health, prometheus
+        include: health, prometheus, metrics # metrics 추가 권장
+
+  # Zipkin 전송 설정
+  zipkin:
+    tracing:
+      endpoint: "http://zipkin:9411/api/v2/spans" # Docker Compose 서비스명 'zipkin' 기준
+
+  # 트레이싱 샘플링 비율 (개발 환경은 100% 수집)
+  tracing:
+    sampling:
+      probability: 1.0
+
+# [추가] 로그 포맷 설정 (TraceID, SpanID를 로그에 남기기 위함)
+logging:
+  pattern:
+    level: "%5p [${spring.application.name:},%X{traceId:-},%X{spanId:-}]"
