@@ -216,7 +216,15 @@ public class CdnService {
         String fileExtension = headerFileName.substring(headerFileName.lastIndexOf(".") + 1);
 
         // cdn에 저장할 이미지 이름 생성
-        String cdnImageName = cdnUrl.replace(getPartCdnUrl(), "");
+        // String cdnImageName = cdnUrl.replace(getPartCdnUrl(), "");
+        // URL의 마지막 '/' 이후의 문자열(고유 ID)만 안전하게 추출합니다.
+        String cdnImageName = cdnUrl.substring(cdnUrl.lastIndexOf("/") + 1);
+
+        // 만약 cdnImageName에 쿼리스트링(?xxx=yyy)이 붙어올 가능성이 있다면 더 안전하게 처리할 수 있습니다.
+        if (cdnImageName.contains("?")) {
+            cdnImageName = cdnImageName.substring(0, cdnImageName.indexOf("?"));
+        }
+
         String saveFileName = fileName + "_" + cdnImageName + "." + fileExtension;
         log.info("저장될 파일명: " + saveFileName);
 
