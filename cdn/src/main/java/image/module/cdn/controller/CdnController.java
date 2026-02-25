@@ -6,6 +6,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.core.io.Resource;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -21,12 +22,12 @@ public class CdnController {
     private final CdnService cdnService;
 
     @GetMapping("/{cdnImageName}")
-    public ResponseEntity<byte[]> getImage(HttpServletRequest request) {
+    public ResponseEntity<Resource> getImage(HttpServletRequest request) {
         try {
             ImageResponseDto imageResponseDto = cdnService.getImage(request.getRequestURL().toString());
             return ResponseEntity.ok()
                     .headers(imageResponseDto.getHeaders())
-                    .body(imageResponseDto.getImageBytes());
+                    .body(imageResponseDto.getImageResource());
         } catch (IOException | InterruptedException e) {
             log.error("이미지 조회에서 IOException 발생");
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
@@ -34,12 +35,12 @@ public class CdnController {
     }
 
     @GetMapping("/download/{cdnImageName}")
-    public ResponseEntity<byte[]> downloadImage(HttpServletRequest request) {
+    public ResponseEntity<Resource> downloadImage(HttpServletRequest request) {
         try {
             ImageResponseDto imageResponseDto = cdnService.downloadImage(request.getRequestURL().toString());
             return ResponseEntity.ok()
                     .headers(imageResponseDto.getHeaders())
-                    .body(imageResponseDto.getImageBytes());
+                    .body(imageResponseDto.getImageResource());
         } catch (IOException | InterruptedException e) {
             log.error("이미지 다운로드에서 IOException 발생");
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
