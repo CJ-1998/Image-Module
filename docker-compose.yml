@@ -129,6 +129,8 @@ services:
         - FILE_DIRECTORY=./eureka
     networks:
       - image_network
+    depends_on:
+      - zipkin
 
   gateway:
     build:
@@ -140,6 +142,7 @@ services:
       - image_network
     depends_on:
       - eureka
+      - zipkin
 
   cdn:
     build:
@@ -152,6 +155,7 @@ services:
     depends_on:
       - eureka
       - redis
+      - zipkin
 
   url:
     build:
@@ -163,6 +167,7 @@ services:
       - image_network
     depends_on:
       - eureka
+      - zipkin
 
   data:
     build:
@@ -175,6 +180,7 @@ services:
     depends_on:
       - eureka
       - server-data-db
+      - zipkin
 
   upload:
     build:
@@ -187,6 +193,7 @@ services:
     depends_on:
       - eureka
       - kafka
+      - zipkin
 
   convert:
     build:
@@ -199,6 +206,7 @@ services:
     depends_on:
       - eureka
       - kafka
+      - zipkin
 
   resize:
     build:
@@ -211,6 +219,7 @@ services:
     depends_on:
       - eureka
       - kafka
+      - zipkin
 
 volumes:
   server_data_db:
