@@ -66,8 +66,6 @@ public class CdnService {
     }
 
     public ImageResponseDto getImageInfo(String fileLocation) throws IOException {
-        ImageResponseDto imageResponseDto = new ImageResponseDto();
-
         // byte[] imageBytes = getByteImage(fileLocation);
         // 1. byte[] 대신 FileSystemResource 할당 (파일의 경로 정보만 갖는 객체 생성)
         Resource resource = new FileSystemResource(fileLocation);
@@ -88,10 +86,7 @@ public class CdnService {
         // 스트리밍 시 Content-Length를 명시해주면 클라이언트(브라우저)에서 다운로드 진행률을 알 수 있다.
         headers.setContentLength(resource.contentLength());
 
-        imageResponseDto.setImageResource(resource);
-        imageResponseDto.setHeaders(headers);
-
-        return imageResponseDto;
+        return ImageResponseDto.from(resource, headers);
     }
 
     private byte[] getByteImage(String fileLocation) throws IOException {
