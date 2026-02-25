@@ -65,7 +65,6 @@ public class CdnService {
         return imageResponseDto;
     }
 
-    @Async
     public ImageResponseDto getImageInfo(String fileLocation) throws IOException {
         ImageResponseDto imageResponseDto = new ImageResponseDto();
 
