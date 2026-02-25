@@ -27,7 +27,7 @@ public class CdnController {
             ImageResponseDto imageResponseDto = cdnService.getImage(request.getRequestURL().toString());
             return ResponseEntity.ok()
                     .headers(imageResponseDto.getHeaders())
-                    .body(imageResponseDto.getImageBytes());
+                    .body(imageResponseDto.getImageResource());
         } catch (IOException | InterruptedException e) {
             log.error("이미지 조회에서 IOException 발생");
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
@@ -40,7 +40,7 @@ public class CdnController {
             ImageResponseDto imageResponseDto = cdnService.downloadImage(request.getRequestURL().toString());
             return ResponseEntity.ok()
                     .headers(imageResponseDto.getHeaders())
-                    .body(imageResponseDto.getImageBytes());
+                    .body(imageResponseDto.getImageResource());
         } catch (IOException | InterruptedException e) {
             log.error("이미지 다운로드에서 IOException 발생");
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();

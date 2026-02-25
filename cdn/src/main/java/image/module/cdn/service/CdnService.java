@@ -88,7 +88,7 @@ public class CdnService {
         // 스트리밍 시 Content-Length를 명시해주면 클라이언트(브라우저)에서 다운로드 진행률을 알 수 있다.
         headers.setContentLength(resource.contentLength());
 
-        imageResponseDto.setImageBytes(resource);
+        imageResponseDto.setImageResource(resource);
         imageResponseDto.setHeaders(headers);
 
         return imageResponseDto;

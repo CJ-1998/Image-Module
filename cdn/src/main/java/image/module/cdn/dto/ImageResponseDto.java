@@ -8,6 +8,6 @@ import org.springframework.http.HttpHeaders;
 @Getter
 @Setter
 public class ImageResponseDto {
-    private Resource imageBytes;
+    private Resource imageResource;
     private HttpHeaders headers;
 }
