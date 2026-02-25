@@ -3,6 +3,7 @@ package image.module.cdn.service;
 import image.module.cdn.client.UrlServiceClient;
 import image.module.cdn.dto.ImageResponseDto;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
@@ -16,6 +17,8 @@ import java.nio.file.attribute.BasicFileAttributes;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.FileSystemResource;
+import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -66,7 +69,15 @@ public class CdnService {
     public ImageResponseDto getImageInfo(String fileLocation) throws IOException {
         ImageResponseDto imageResponseDto = new ImageResponseDto();
 
-        byte[] imageBytes = getByteImage(fileLocation);
+        // byte[] imageBytes = getByteImage(fileLocation);
+        // 1. byte[] 대신 FileSystemResource 할당 (파일의 경로 정보만 갖는 객체 생성)
+        Resource resource = new FileSystemResource(fileLocation);
+
+        // 2. 방어적 프로그래밍: 파일이 실제 존재하는지, 읽을 수 있는지 검사
+        if (!resource.exists() || !resource.isReadable()) {
+            log.error("파일을 읽을 수 없습니다. 경로: {}", fileLocation);
+            throw new FileNotFoundException("이미지 파일을 읽을 수 없습니다: " + fileLocation);
+        }
 
         // 파일의 MIME 타입을 동적으로 추출
         String imageType = getImageType(fileLocation);
@@ -75,7 +86,10 @@ public class CdnService {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.parseMediaType(imageType));
 
-        imageResponseDto.setImageBytes(imageBytes);
+        // 스트리밍 시 Content-Length를 명시해주면 클라이언트(브라우저)에서 다운로드 진행률을 알 수 있다.
+        headers.setContentLength(resource.contentLength());
+
+        imageResponseDto.setImageBytes(resource);
         imageResponseDto.setHeaders(headers);
 
         return imageResponseDto;
