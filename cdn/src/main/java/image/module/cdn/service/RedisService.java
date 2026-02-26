@@ -17,10 +17,16 @@ public class RedisService {
     }
 
     // 값을 Redis에 저장하는 메서드
-    public void setValue(String key, String value, Integer cachingTime) {
+    public void setValue(String key, String value, Integer cachingTime, String originalFileName) {
         redisTemplate.opsForValue().set(key, value, cachingTime, TimeUnit.MINUTES);
         redisTemplate.opsForValue().set(key + ":ttl", String.valueOf(cachingTime));
         redisTemplate.opsForValue().set(key + ":hitRate", String.valueOf(0));
+        redisTemplate.opsForValue().set(key + ":originalFileName", originalFileName);
+    }
+
+    // 원본 파일명을 redis에서 가져오는 메서드
+    public String getOriginalFileName(String key) {
+        return redisTemplate.opsForValue().get(key + ":originalFileName");
     }
 
     // 값을 Redis에서 가져오는 메서드

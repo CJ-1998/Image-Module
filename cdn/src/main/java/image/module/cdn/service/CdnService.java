@@ -58,7 +58,8 @@ public class CdnService {
 
         ImageResponseDto imageResponseDto = getImageInfo(fileLocation);
 
-        String imageOriginalName = getOriginalNameByPath(fileLocation);
+        // String imageOriginalName = getOriginalNameByPath(fileLocation);
+        String imageOriginalName = redisService.getOriginalFileName(convertedCdnUrl);
 
         imageResponseDto.getHeaders().setContentDispositionFormData("attachment", imageOriginalName);
 
@@ -217,6 +218,7 @@ public class CdnService {
         String headerCachingTime = headers.getFirst("cache-time");
 
         // 필요한 값들 가공
+        // 원본 파일명
         String fileName = headerFileName.substring(0, headerFileName.lastIndexOf("."));
         Integer cachingTime = Integer.parseInt(headerCachingTime);
 
@@ -233,14 +235,16 @@ public class CdnService {
             cdnImageName = cdnImageName.substring(0, cdnImageName.indexOf("?"));
         }
 
-        String saveFileName = fileName + "_" + cdnImageName + "." + fileExtension;
+        // String saveFileName = fileName + "_" + cdnImageName + "." + fileExtension;
+        String saveFileName = cdnImageName + "." + fileExtension;
+        String originalFileName = fileName + "." + fileExtension;
         log.info("저장될 파일명: " + saveFileName);
 
         // 이미지 저장
         String fileLocation = saveImageInCdn(imageByte, saveFileName);
 
         // redis에 값 저장
-        redisService.setValue(cdnUrl, fileLocation, cachingTime);
+        redisService.setValue(cdnUrl, fileLocation, cachingTime, originalFileName);
         redisService.setBackupValue(cdnUrl, fileLocation);
 
         return fileLocation;

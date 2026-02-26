@@ -51,6 +51,7 @@ public class RedisExpirationListener implements MessageListener {
         redisService.deleteKey("backup_" + key);
         redisService.deleteKey(key + ":ttl");
         redisService.deleteKey(key + ":hitRate");
+        redisService.deleteKey(key + ":originalFileName");
     }
 
     private void deleteImage(String imageName) throws IOException {
