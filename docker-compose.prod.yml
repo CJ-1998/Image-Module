@@ -131,6 +131,9 @@ services:
     ports:
       - "80:80"
       - "443:443"  # 포트폴리오 고도화 시 HTTPS(SSL) 적용을 위해 미리 열어둠
+    volumes:
+      # Nginx 설정 파일 마운트
+      - ./nginx/nginx.prod.conf:/etc/nginx/nginx.conf:ro
     env_file: .env.prod
 
 # [중요] 운영 환경에서 데이터를 영구 보존하기 위한 Docker Named Volumes 선언
