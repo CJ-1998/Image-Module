@@ -221,6 +221,20 @@ services:
       - kafka
       - zipkin
 
+  nginx:
+    image: nginx:alpine
+    container_name: image_nginx
+    restart: always
+    volumes:
+      # Nginx 설정 파일 마운트
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      # ★ cdn 서비스와 동일한 호스트 디렉토리를 공유 (Zero-copy를 위해 직접 파일 접근)
+      - ${CDN_LOCAL_PATH}:/var/www/images:ro
+    networks:
+      - image_network
+    depends_on:
+      - gateway
+
 volumes:
   server_data_db:
 

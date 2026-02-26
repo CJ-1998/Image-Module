@@ -127,6 +127,12 @@ services:
       - /var/lib/docker/containers:/var/lib/docker/containers:ro
       - /var/run/docker.sock:/var/run/docker.sock:ro
 
+  nginx:
+    ports:
+      - "80:80"
+      - "443:443"  # 포트폴리오 고도화 시 HTTPS(SSL) 적용을 위해 미리 열어둠
+    env_file: .env.prod
+
 # [중요] 운영 환경에서 데이터를 영구 보존하기 위한 Docker Named Volumes 선언
 volumes:
   prometheus_data:
