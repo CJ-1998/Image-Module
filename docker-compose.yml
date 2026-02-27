@@ -17,12 +17,24 @@ services:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: ${POSTGRES_DB}
+    # DB가 쿼리를 받을 준비가 되었는지 확인
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   redis:
     image: redis:alpine
     container_name: image_redis
     networks:
       - image_network
+    # Redis가 응답하는지 ping으로 확인
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   minio:
     image: minio/minio
@@ -43,6 +55,12 @@ services:
     restart: always
     networks:
       - image_network
+    # Zipkin 서버가 완전히 켜졌는지 헬스체크 API로 확인
+    healthcheck:
+      test: [ "CMD", "wget", "-qO-", "http://localhost:9411/health" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   # [메트릭 수집] Prometheus
   prometheus:
@@ -91,6 +109,12 @@ services:
     environment:
       ZOOKEEPER_CLIENT_PORT: 2181
       ZOOKEEPER_TICK_TIME: 2000
+    # Zookeeper 구동 상태 확인
+    healthcheck:
+      test: [ "CMD-SHELL", "echo ruok | nc localhost 2181 || exit 1" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   kafka:
     image: wurstmeister/kafka:latest
@@ -107,6 +131,12 @@ services:
       KAFKA_LISTENERS: INSIDE://0.0.0.0:9092,OUTSIDE://0.0.0.0:29092
       KAFKA_INTER_BROKER_LISTENER_NAME: INSIDE
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+    # Kafka 브로커 구동 확인
+    healthcheck:
+      test: [ "CMD-SHELL", "kafka-topics.sh --bootstrap-server localhost:9092 --list" ]
+      interval: 15s
+      timeout: 5s
+      retries: 5
 
   kafka-ui:
     image: provectuslabs/kafka-ui:latest
@@ -130,7 +160,14 @@ services:
     networks:
       - image_network
     depends_on:
-      - zipkin
+      zipkin:
+        condition: service_healthy
+    # Eureka가 요청을 받을 준비가 되었는지 확인
+    healthcheck:
+      test: [ "CMD-SHELL", "wget -q --spider http://localhost:19090/ || exit 1" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   gateway:
     build:
@@ -141,8 +178,10 @@ services:
     networks:
       - image_network
     depends_on:
-      - eureka
-      - zipkin
+      eureka:
+        condition: service_healthy
+      zipkin:
+        condition: service_healthy
 
   cdn:
     build:
@@ -153,9 +192,12 @@ services:
     networks:
       - image_network
     depends_on:
-      - eureka
-      - redis
-      - zipkin
+      eureka:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      zipkin:
+        condition: service_healthy
 
   url:
     build:
@@ -166,8 +208,10 @@ services:
     networks:
       - image_network
     depends_on:
-      - eureka
-      - zipkin
+      eureka:
+        condition: service_healthy
+      zipkin:
+        condition: service_healthy
 
   data:
     build:
@@ -178,9 +222,12 @@ services:
     networks:
       - image_network
     depends_on:
-      - eureka
-      - server-data-db
-      - zipkin
+      eureka:
+        condition: service_healthy
+      server-data-db:
+        condition: service_healthy
+      zipkin:
+        condition: service_healthy
 
   upload:
     build:
@@ -191,9 +238,12 @@ services:
     networks:
       - image_network
     depends_on:
-      - eureka
-      - kafka
-      - zipkin
+      eureka:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      zipkin:
+        condition: service_healthy
 
   convert:
     build:
@@ -204,9 +254,12 @@ services:
     networks:
       - image_network
     depends_on:
-      - eureka
-      - kafka
-      - zipkin
+      eureka:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      zipkin:
+        condition: service_healthy
 
   resize:
     build:
@@ -217,9 +270,12 @@ services:
     networks:
       - image_network
     depends_on:
-      - eureka
-      - kafka
-      - zipkin
+      eureka:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      zipkin:
+        condition: service_healthy
 
   nginx:
     image: nginx:alpine
