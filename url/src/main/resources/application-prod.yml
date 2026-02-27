@@ -13,3 +13,7 @@ eureka:
       defaultZone: ${EUREKA_SERVER_URL}
     register-with-eureka: true
     fetch-registry: true
+
+cdn:
+  image:
+    url: ${CDN_EXTERNAL_URL}

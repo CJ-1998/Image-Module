@@ -35,6 +35,9 @@ public class UrlService {
     @Value("${minio.buckets.downloadBucket}")
     private String downloadBucket;
 
+    @Value("${cdn.image.url}")
+    public String fileUrl;
+
 
     public ResponseEntity<byte[]> fetchImageByte(String cdnUrl) {
         try {
@@ -144,7 +147,7 @@ public class UrlService {
         String cdnUrl = imageResponse.getCdnUrl();
         log.info("CDN URL: {}", cdnUrl);
 
-        return ResponseEntity.ok(cdnUrl); // 정상적으로 CDN URL 반환
+        return ResponseEntity.ok(createCdnUrl(cdnUrl)); // 정상적으로 CDN URL 반환
     }
 
     public ResponseEntity<String> getReCdnUrl(UUID originalFileUUID, Integer size) {
@@ -158,8 +161,13 @@ public class UrlService {
             return ResponseEntity.ok(message);
         }
 
-        return ResponseEntity.ok(imageResponse.getCdnUrl());
+        String cdnUrl = imageResponse.getCdnUrl();
+        log.info("RESIZE CDN URL: {}", cdnUrl);
 
+        return ResponseEntity.ok(createCdnUrl(cdnUrl));
+    }
 
+    private String createCdnUrl(String cdnUUID) {
+        return fileUrl + "/" + cdnUUID;
     }
 }
