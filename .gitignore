@@ -8,3 +8,6 @@
 ### minio ###
 minio_data/*
 data_minio/*
+
+### image
+cdn/images

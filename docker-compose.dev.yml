@@ -118,3 +118,11 @@ services:
       # 호스트(내 PC)의 도커 컨테이너 로그가 쌓이는 경로를 읽기 전용(ro)으로 마운트
       - /var/lib/docker/containers:/var/lib/docker/containers:ro
       - /var/run/docker.sock:/var/run/docker.sock:ro
+
+  nginx:
+    ports:
+      - "${NGINX_PORT:-80}:80"
+    volumes:
+      # Nginx 설정 파일 마운트
+      - ./nginx/nginx.dev.conf:/etc/nginx/nginx.conf:ro
+    env_file: .env.dev

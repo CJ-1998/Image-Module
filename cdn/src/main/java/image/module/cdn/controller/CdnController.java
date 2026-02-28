@@ -2,7 +2,6 @@ package image.module.cdn.controller;
 
 import image.module.cdn.dto.ImageResponseDto;
 import image.module.cdn.service.CdnService;
-import jakarta.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -10,6 +9,7 @@ import org.springframework.core.io.Resource;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -22,9 +22,9 @@ public class CdnController {
     private final CdnService cdnService;
 
     @GetMapping("/{cdnImageName}")
-    public ResponseEntity<Resource> getImage(HttpServletRequest request) {
+    public ResponseEntity<Resource> getImage(@PathVariable("cdnImageName") String cdnUrl) {
         try {
-            ImageResponseDto imageResponseDto = cdnService.getImage(request.getRequestURL().toString());
+            ImageResponseDto imageResponseDto = cdnService.getImage(cdnUrl);
             return ResponseEntity.ok()
                     .headers(imageResponseDto.getHeaders())
                     .body(imageResponseDto.getImageResource());
@@ -35,9 +35,9 @@ public class CdnController {
     }
 
     @GetMapping("/download/{cdnImageName}")
-    public ResponseEntity<Resource> downloadImage(HttpServletRequest request) {
+    public ResponseEntity<Resource> downloadImage(@PathVariable("cdnImageName") String cdnUrl) {
         try {
-            ImageResponseDto imageResponseDto = cdnService.downloadImage(request.getRequestURL().toString());
+            ImageResponseDto imageResponseDto = cdnService.downloadImage(cdnUrl);
             return ResponseEntity.ok()
                     .headers(imageResponseDto.getHeaders())
                     .body(imageResponseDto.getImageResource());
